@@ -1,0 +1,364 @@
+
+var checkflag=[];
+function Disable1(action,author,menuid,ObjectType,ObjectReference){
+    if(action==1){
+        //添加右上角刷新按钮
+        $('body').append('<div  ><img  id="imgrefresh" style="height:auto;width:auto;position:absolute;top:1%;left:95%;z-index:99;cursor:pointer;opacity:0.5" src="../scripts_lib/hisui-0.1.0/dist/css/icons/big/refresh.png" alt="刷新"></img></div>');
+        $('#imgrefresh').mousedown(function(event) {
+            window.location.reload();
+        });
+
+        $('body').append('<ul id="contextmenu" style="z-index:999999;display:none;position:absolute;background:#FFFFFF"><li ><a id="enablebtn" style="font-size:150%">启用</a></li><li><a id="disablebtn" style="font-size:150%">禁用</a></li></ul>');
+        //禁用元素
+        if(BDPFunLibDisableArray!="undefined"){
+            for(var params in BDPFunLibDisableArray){
+                if($('#'+params)[0]!=undefined){
+                    if($('#'+params)[0].tagName=='A'){
+                        $('#'+params).linkbutton('disable');
+                        $('#'+params)[0].disabled=true;
+                    }
+                    if($('#'+params)[0].tagName=='INPUT'){
+                        if($('#'+params).next()[0]!=undefined){
+                            if($('#'+params).next()[0].tagName=='INS'){
+                                $('#'+params).next().unbind('click mouseover'); 
+                                $('#'+params).next()[0].readonly=true;
+                                // if($('#'+params).parent().hasClass('hischeckbox_square-blue.checked')){
+                                //     alert(1)
+                                //     //$('#'+params).parent().removeClass('hischeckbox_square-blue.checked').addClass('class_name')
+                                // }
+                                //$('#'+params).parent().removeClass('hischeckbox_square-blue').addClass('class_name')
+                                //$('#'+params).parent().next().append('<span>    已禁用</span>').unbind('click mouseover');
+                            }
+                            if($('#'+params).next()[0].tagName=='SPAN'){
+                                $('#'+params).next()[0].readonly=true;
+                                $('#'+params).next().find("input").attr("readonly",true)
+                                    .css({'background-color':'#EBEBE4'})[0].readonly=true;
+                                $('#'+params).next().find(".combo-arrow").unbind('click');
+                            }
+                        }
+                        else{
+                            $('#'+params).attr("readonly",true);
+                            $('#'+params)[0].readonly=true;
+                            $('#'+params).css({'background-color':'#EBEBE4'});
+                        }
+                    }
+                }   
+            }
+        }
+        //判断是否开启可视化功能元素授权
+        if(!author){
+            return
+        }
+
+        $('body').bind("contextmenu", function(){
+            return false;
+        });
+        enableDom=function(id){
+            var flag;
+            $('* input,a,span,ins').each(function(index, el) {
+                if($(this)[0].id==id){
+                    flag=1
+                }
+            });
+            if(flag){
+                var target='#'+id;
+                var elmentid=$(target)[0].id;
+                if($(target).next()[0]!=undefined){
+                    target=$(target).next()
+                }
+                saveData(target,elmentid,'enable')
+                $('#disabledelment').find('p').each(function(index, el) {
+                    if($(this)[0].textContent==elmentid){
+                        $(this).remove()
+                    }
+                });
+            }
+            else{
+                $.messager.alert('提示信息','该元素为自动生成,请先激活该元素所在面板！');   
+            }
+        }
+        //右下角已禁用元素列表-滑动显示
+        $('body').append('<div  ><img  id="imgdisabledelment" style="height:auto;width:auto;position:absolute;top:80%;left:85%;z-index:99;cursor:pointer;opacity:0.5" src="../scripts/bdp/Framework/icons/mkb/tooltipbtn.png" alt="收藏夹"></img></div>');
+        $('body').append('<div  ><div  id="disabledelment" style="background:#3F3F3F;height:89%;width:40%;position:absolute;top:10%;left:100%;z-index:99;"><p style="color:#008FF0;margin:10px;font-size:20px">已禁用元素:</p></div></div>');
+        $("#imgdisabledelment").mouseover(function(){
+            $("#imgdisabledelment").css({opacity:1});  
+            $("#disabledelment").animate({left:'75%'});
+        });
+        $("#disabledelment").mouseleave(function(){
+           $("#imgdisabledelment").css({opacity:0.5});  
+           $("#disabledelment").animate({left:'100%'});
+        });
+        if(BDPFunLibDisableArray!="undefined"){
+            for(var params in BDPFunLibDisableArray){
+                $('#disabledelment').append('<p style="color:#FFFFFF;margin:10px" >'+params+'<a href="javascript:void(0)""  onclick=enableDom("'+params+'")><img style="margin-left:5px" src="../scripts_lib/hisui-0.1.0/dist/css/icons/cancel.png"></img></a></p>')
+            }
+        } 
+        
+        $('#enablebtn').hover(function(){
+            $(this).parent().next().css({'background':'#FFFFFF'})
+            $(this).parent().css({'background':'#aaccf6'})
+        }).bind("contextmenu", function(){
+            return false;
+        });
+        $('#disablebtn').hover(function(){
+            $(this).parent().prev().css({'background':'#FFFFFF'})
+            $(this).parent().css({'background':'#aaccf6'})
+        }).bind("contextmenu", function(){
+            return false;
+        });
+        //按条件给功能元素添加右键事件-禁用或启用
+        $('* input,a,span,ins').each(function(index, el) {
+            var target=this;
+            if(($(target)[0].id!="")&&($(target)[0].id!="disablebtn")&&($(target)[0].id!="enablebtn")){
+                var elmentid=$(target)[0].id;
+                if($(target).next()[0]!=undefined){
+                    target=$(target).next()
+                }
+                mouseEvent(target,elmentid)    
+            }
+        });
+    }
+    if(action==2){
+        
+        $('* ins').each(function(index, el) {
+            if($(this).prev()[0].id!=""){
+                if(BDPFunLibDisableArray!="undefined"){
+                    for(var params in BDPFunLibDisableArray){
+                        if($(this).prev()[0].id==params){
+                            if($(this).parent().is('.hischeckbox_square-blue')){
+                                $(this).parent().css({'background-position':'-72px 0','cursor':'default'});
+                            }
+                            if($(this).parent().is('.hischeckbox_square-blue.checked')){
+                                $(this).parent().css({'background-position':'-96px 0'});
+                            }
+                        }
+                    }
+                }
+                if(checkflag[$(this).prev()[0].id]==1){
+                    if($(this).parent().is('.hischeckbox_square-blue')){
+                        $(this).parent().css({'background-position':'0 0','cursor':'pointer'});
+                    }
+                    if($(this).parent().is('.hischeckbox_square-blue.checked')){
+                        $(this).parent().css({'background-position':'-48px 0'});
+                    }
+                }
+                if(checkflag[$(this).prev()[0].id]==2){
+                    if($(this).parent().is('.hischeckbox_square-blue')){
+                        $(this).parent().css({'background-position':'-72px 0','cursor':'pointer'});
+                    }
+                    if($(this).parent().is('.hischeckbox_square-blue.checked')){
+                        $(this).parent().css({'background-position':'-96px 0'});
+                    }
+                }
+            }
+        });
+        $('.dialog-button a').each(function(index, el) {
+            if($(this)[0].id!=""){
+                if(BDPFunLibDisableArray!="undefined"){
+                    for(var params in BDPFunLibDisableArray){
+                        if($(this)[0].id==params){
+                            $(this).linkbutton('disable');
+                            $(this)[0].disabled=true;
+                        }
+                    }
+                }
+                //判断是否开启可视化功能元素授权
+                if(!author){
+                    return
+                }
+                var elmentid=$(this)[0].id;
+                mouseEvent(this,elmentid);
+            }
+        });
+    }    
+
+    function transtDesc(params){
+        switch(params){
+            case 'add_btn':
+                return '添加'
+                break;
+            case 'update_btn':
+                return '修改'
+                break;
+            case 'del_btn':
+                return '删除'
+                break;
+            case 'btnSearch':
+                return '查询'
+                break;
+            case 'btnRefresh':
+                return '重置'
+                break;
+            case 'TextCode':
+                return '代码(查询框)'
+                break; 
+            case 'TextDesc':
+                return '描述(查询框)'
+                break;   
+            case 'save_btn':
+                return '保存'
+                break; 
+            case 'close_btn':
+                return '关闭'
+                break;  
+            default: 
+                return params                                  
+        }
+    }
+    
+    function saveData(target,elmentid,type){
+
+        function enabledom(){
+            if($(target)[0].tagName=='A'){
+                $(target).linkbutton('enable');
+                $(target)[0].disabled=false;
+                $('#enablebtn').hide(); 
+            }
+            if($(target)[0].tagName=='INPUT'){
+                $(target).attr("readonly",false);
+                $(target)[0].readonly=false;
+                $(target).css({'background-color':'#ffffff'});
+                $('#enablebtn').hide(); 
+            }
+            if($(target)[0].tagName=='INS'){
+                //$(target).parent().next().find('span').remove(); 
+                $(target)[0].readonly=false;
+                checkflag[elmentid]=1
+                if($(target).parent().is('.hischeckbox_square-blue')){
+                    $(target).parent().css({'background-position-x':'0','cursor':'pointer'});
+                }
+                if($(target).parent().is('.hischeckbox_square-blue.checked')){
+                    $(target).parent().css({'background-position-x':'-48px'});
+                }
+                $('#enablebtn').hide(); 
+            }
+            if($(target)[0].tagName=='SPAN'){
+                $(target)[0].readonly=false;
+                $(target).find("input").attr("readonly",false)
+                    .css({'background-color':'#ffffff'})[0].readonly=false;
+                $('#enablebtn').hide();
+
+            }
+            
+        }
+        function disabledom(){
+            if($(target)[0].tagName=='A'){
+                $(target).linkbutton('disable');
+                $(target)[0].disabled=true;
+                $('#disablebtn').hide(); 
+            }
+            if($(target)[0].tagName=='INPUT'){
+                $(target).attr("readonly",true);
+                $(target)[0].readonly=true;
+                $(target).css({'background-color':'#EBEBE4'});
+                $('#disablebtn').hide(); 
+            }
+            if($(target)[0].tagName=='INS'){
+                $(target).unbind('click mouseover'); 
+                //$(target).parent().next().append('<span>    已禁用</span>').unbind('click mouseover'); 
+                $(target)[0].readonly=true;
+               checkflag[elmentid]=2
+                if($(target).parent().is('.hischeckbox_square-blue')){
+                    $(target).parent().css({'background-position-x':'-72px','cursor':'default'});
+                }
+                if($(target).parent().is('.hischeckbox_square-blue.checked')){
+                    $(target).parent().css({'background-position-x':'-96px'});
+                }
+                $('#disablebtn').hide(); 
+                
+            }
+            if($(target)[0].tagName=='SPAN'){
+                $(target)[0].readonly=true;
+                $(target).find("input").attr("readonly",true)
+                    .css({'background-color':'#EBEBE4'})[0].readonly=true;
+                $(target).find(".combo-arrow").unbind('click');
+                $('#disablebtn').hide();
+            }
+            
+        }
+        $.ajax({
+            url:"../csp/dhc.bdp.ext.datatrans.csp?pClassName=web.BDP.sys.ExtPreferencesSubKey&pClassMethod=SaveAuthorizeDataNew",
+            data:{ObjectType:ObjectType,ObjectReference:ObjectReference,Data:elmentid+':'+type,id:menuid},
+            type:'GET',
+            success:function(data){
+            var data=eval('('+data+')');
+            if(data.success=='true'){
+                if(type=='enable'){
+                    enabledom();
+                    
+                }
+                if(type=='disable'){
+                    disabledom();
+                    
+                }
+            }
+            else{
+                var errorMsg="修改失败！";
+                if(data.errorinfo){
+                    errorMsg=errorMsg+'</br>错误信息:'+data.errorinfo
+                }
+                $.messager.alert('错误提示',errorMsg,'error')
+            }
+          }
+        });
+    }
+
+    function mouseEvent(target,elmentid){
+        $(target).unbind('mouseup').mouseup(function(e) {
+            $('#enablebtn').unbind('click').click(function(){
+                $('#disabledelment').find('p').each(function(index, el) {
+                    if($(this)[0].innerHTML==elmentid){
+                        $(this).remove()
+                    }
+                });
+                
+                saveData(target,elmentid,'enable')
+                
+            });
+            $('#disablebtn').unbind('click').click(function(){
+                $('#disabledelment').append('<p style="color:#FFFFFF;margin:10px" >'+elmentid+'<a href="javascript:void(0)""  onclick=enableDom("'+elmentid+'")><img style="margin-left:5px" src="../scripts_lib/hisui-0.1.0/dist/css/icons/cancel.png"></img></a></p>')
+                saveData(target,elmentid,'disable')
+                
+            });
+            if (3 == e.which) {
+                //右键为3
+                $("#contextmenu").find('li').css({'display':'block','padding':'0 8px 0 8px','cursor':'pointer'});
+                if($(target)[0].tagName=='A'){
+                    if($(target)[0].disabled){
+                        $('#disablebtn').hide();
+                        $('#enablebtn').show()
+                    }
+                    else{
+                        $('#enablebtn').hide();
+                        $('#disablebtn').show()
+                    }
+                }
+                else{
+                    if($(target)[0].readonly){
+                        $('#disablebtn').hide();
+                        $('#enablebtn').show()
+                    }
+                    else{
+                        $('#enablebtn').hide();
+                        $('#disablebtn').show()
+                    }
+                }
+                //
+                $("#contextmenu").css({
+                    "left": $(this).offset().left+55,
+                    "top": $(this).offset().top+4
+                }).show();
+                $('#contextmenu').hover("",function(event) {
+                    setTimeout(function(){
+                        $("#contextmenu").hide()
+                        $("#contextmenu").find('li').css({'background':'#FFFFFF'})
+                    },200)
+                });
+            } else if (1 == e.which) {
+
+            }
+        })
+    }
+    
+    
+}
